@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zapzap | Status da integração</title>
+  <title>Zapzap | Conectar WhatsApp</title>
   <style>
     :root { color-scheme: light; --ink: #17221d; --muted: #65736b; --paper: #f4f1e8; --panel: #fffdf7; --line: #d9ded5; --green: #1d7658; --amber: #b36a18; }
     * { box-sizing: border-box; }
@@ -19,6 +19,10 @@
     .value { display: flex; align-items: center; gap: 9px; font-size: 1.35rem; }
     .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--amber); }
     .dot.ok { background: var(--green); }
+    .qr-panel { display: grid; place-items: center; min-height: 330px; margin: 30px 0; padding: 30px; background: var(--panel); border: 1px solid var(--line); text-align: center; }
+    #qr-image { width: min(280px, 80vw); height: auto; border: 12px solid white; }
+    #qr-placeholder { max-width: 360px; color: var(--muted); }
+    #qr-caption { margin: 14px 0 0; color: var(--muted); }
     section { max-width: 640px; }
     h2 { font-size: 1.7rem; font-weight: 500; margin: 0 0 12px; }
     ol { margin: 0; padding-left: 22px; color: var(--muted); }
@@ -30,9 +34,14 @@
 <body>
   <main>
     <header>
-      <div><p class="eyebrow">Zapzap / painel local</p><h1>Integração em andamento.</h1></div>
-      <p>WhatsApp Web para Chatwoot, com sessão local e atendimento bidirecional.</p>
+      <div><p class="eyebrow">Zapzap / conexão</p><h1>Conecte seu WhatsApp.</h1></div>
+      <p id="message">Aguardando o WhatsApp iniciar no servidor.</p>
     </header>
+    <section class="qr-panel" aria-live="polite">
+      <div id="qr-placeholder">O QR Code aparecerá aqui assim que o servidor iniciar o WhatsApp.</div>
+      <img id="qr-image" alt="QR Code para conectar o WhatsApp" hidden>
+      <p id="qr-caption" hidden>Abra WhatsApp &gt; Aparelhos conectados &gt; Conectar aparelho.</p>
+    </section>
     <div class="grid" aria-live="polite">
       <article class="status"><h2>Servidor</h2><div class="value"><span class="dot ok"></span><span>Online</span></div></article>
       <article class="status"><h2>WhatsApp</h2><div class="value"><span id="whatsapp-dot" class="dot"></span><span id="whatsapp">Verificando</span></div></article>
@@ -48,16 +57,32 @@
     </section>
   </main>
   <script>
-    fetch('/health').then((response) => response.json()).then((health) => {
+    function refresh() {
+      Promise.all([fetch('/health').then((response) => response.json()), fetch('/qr').then((response) => response.json())]).then(([health, qr]) => {
       const labels = [['whatsapp', health.whatsapp], ['chatwoot', health.chatwoot]];
       labels.forEach(([name, ready]) => {
-        document.getElementById(name).textContent = ready ? 'Configurado' : 'Pendente';
+        document.getElementById(name).textContent = ready ? 'Conectado' : 'Pendente';
         document.getElementById(name + '-dot').classList.toggle('ok', ready);
       });
+      const image = document.getElementById('qr-image');
+      const placeholder = document.getElementById('qr-placeholder');
+      const caption = document.getElementById('qr-caption');
+      if (qr.qrCode) {
+        image.src = qr.qrCode;
+        image.hidden = false;
+        caption.hidden = false;
+        placeholder.hidden = true;
+        document.getElementById('message').textContent = 'Escaneie o código abaixo com seu celular.';
+      } else if (health.whatsapp) {
+        placeholder.textContent = 'WhatsApp conectado. Esta página não precisa mais de um QR Code.';
+      }
     }).catch(() => {
       document.getElementById('whatsapp').textContent = 'Indisponível';
       document.getElementById('chatwoot').textContent = 'Indisponível';
     });
+    }
+    refresh();
+    setInterval(refresh, 2000);
   </script>
 </body>
 </html>

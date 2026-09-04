@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('node:path');
 const puppeteer = require('puppeteer');
+const QRCode = require('qrcode');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const db = require('./db');
@@ -13,12 +14,18 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+let currentQrCode = null;
+
 app.get('/health', (request, response) => {
   response.json({
     status: 'ok',
     whatsapp: Boolean(client.info),
     chatwoot: chatwoot.isConfigured(),
   });
+});
+
+app.get('/qr', (request, response) => {
+  response.json({ qrCode: currentQrCode });
 });
 
 const client = new Client({
@@ -121,12 +128,16 @@ app.post('/webhook/chatwoot', async (request, response) => {
   }
 });
 
-client.on('qr', (qr) => {
+client.on('qr', async (qr) => {
   console.log('Escaneie o QR Code abaixo no WhatsApp:');
   qrcode.generate(qr, { small: true });
+  currentQrCode = await QRCode.toDataURL(qr);
 });
 
-client.on('ready', () => console.log('WhatsApp conectado e pronto.'));
+client.on('ready', () => {
+  currentQrCode = null;
+  console.log('WhatsApp conectado e pronto.');
+});
 client.on('authenticated', () => console.log('Sessão do WhatsApp autenticada.'));
 client.on('auth_failure', (error) => console.error('Falha na autenticação:', error));
 client.on('disconnected', (reason) => console.warn('WhatsApp desconectado:', reason));
