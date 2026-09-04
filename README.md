@@ -15,7 +15,7 @@ npm install
 cp .env.example .env
 ```
 
-Edite `.env` com os dados da sua conta Chatwoot. O servidor pode abrir sem essas variáveis para consulta da página de status, mas o encaminhamento de mensagens só funciona após a configuração.
+Edite `.env` com os dados da sua conta Chatwoot. O servidor pode abrir sem essas variáveis para consulta da página de status, mas o encaminhamento de mensagens só funciona após a configuração. O código também aceita o nome legado `CHATWOOT_API_URL`.
 
 ## Execução
 

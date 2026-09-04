@@ -1,6 +1,8 @@
 const axios = require('axios');
 
-const apiUrl = (process.env.CHATWOOT_API_URL || '').replace(/\/$/, '');
+const apiUrl = (
+  process.env.CHATWOOT_URL || process.env.CHATWOOT_API_URL || ''
+).replace(/\/$/, '');
 const accountId = process.env.CHATWOOT_ACCOUNT_ID;
 const inboxId = Number(process.env.CHATWOOT_INBOX_ID);
 
